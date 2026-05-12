@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package apex.v1;
+option go_package = "github.com/apex/raft/proto";
+
+// Service for distributed coordination
+service ApexCoordinator {
+  // Receives an optimized physical plan and distributes it across the cluster
+  rpc SubmitPlan (SubmitPlanRequest) returns (SubmitPlanResponse);
+}
+
+// Service for local node execution (Rust JIT)
+service ApexExecution {
+  // Executes a physical plan slice on the local node
+  rpc ExecutePlan (ExecutePlanRequest) returns (ExecutePlanResponse);
+}
+
+message SubmitPlanRequest {
+  string query_id = 1;
+  bytes physical_plan_json = 2; // Serialize the Haskell AST to JSON
+}
+
+message SubmitPlanResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ExecutePlanRequest {
+  string query_id = 1;
+  bytes physical_plan_json = 2;
+}
+
+message ExecutePlanResponse {
+  bool success = 1;
+  string result_data = 2; 
+}
+
+// Service for Haskell query optimization
+service ApexOptimizer {
+  // Receives a logical plan from Go, returns an optimized physical plan
+  rpc Optimize (OptimizePlanRequest) returns (OptimizePlanResponse);
+}
+
+// Structured Go AST sent to Haskell
+message LogicalPlan {
+  string query_type = 1;
+  repeated string table_names = 2;
+}
+
+message OptimizePlanRequest {
+  string query_id = 1;
+  LogicalPlan logical_plan = 2;
+}
+
+message OptimizePlanResponse {
+  bool success = 1;
+  bytes physical_plan_json = 2; // Returns the optimized HashJoin JSON!
+}

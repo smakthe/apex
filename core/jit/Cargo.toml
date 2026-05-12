@@ -1,0 +1,9 @@
+[package]
+name = "apex_jit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+datafusion = "32.0.0"
+inkwell = { version = "0.2.0", features = ["llvm14-0"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread"] }
