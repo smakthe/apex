@@ -66,11 +66,9 @@ APEX is divided into discrete, highly specialized modules. The system uses **Zer
 2. **Rust (`core/jit` & `core/storage`)**
    - **Execution Engine**: Powered by Apache Arrow / DataFusion, parsing and executing queries using AVX-512 hardware vectorization across all CPU cores.
    - **Storage Engine**: Experimental logic capable of navigating raw B-Tree binary structures and decoding proprietary `InnoDB COMPACT` row formats.
-3. **Haskell (`core/optimizer`)**
-   - **Query Optimizer**: A Cascades-style top-down optimizer with memoization and advanced algebraic cardinality estimation.
-4. **C (`core/allocator`)**
+3. **C (`core/allocator`)**
    - **Memory Management**: A lock-free, NUMA-aware, ABA-safe slab allocator using epoch-based reclamation for zero-copy data buffering.
-5. **Hardware Kernels (`core/kernels` & `core/fpga`)**
+4. **Hardware Kernels (`core/kernels` & `core/fpga`)**
    - **CUDA / ASM / SystemVerilog**: Specialized hardware routines (partitioned warp-cooperative hash joins, DMA scatter-gather engines) designed for immense parallel acceleration.
 
 ---
@@ -82,7 +80,6 @@ Because APEX leverages a true polyglot stack, compiling the entire repository fr
 - **Go**: `1.21+` (Required for the CLI and Raft Coordinator)
 - **Rust & Cargo**: `rustup default stable` (Required for the Execution Engine)
 - **Clang / GCC**: (Required for the C Allocator and Hardware Kernels)
-- **Haskell**: `ghc` and `cabal-install` (Required for the Optimizer)
 - **Node.js**: `v18+` (Required for WebAssembly Runtimes)
 - **LLVM 14**: (Required by the Rust JIT to link `llvm-sys`)
 
@@ -98,7 +95,6 @@ make all
 make allocator
 make jit
 make raft
-make optimizer
 ```
 
 ---

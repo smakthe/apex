@@ -63,25 +63,6 @@ vendor/
 *.ptx
 *.cubin
 
-# ------------------------------------------
-# Haskell (core/optimizer)
-# ------------------------------------------
-dist/
-dist-newstyle/
-cabal-dev/
-*.o
-*.hi
-*.chi
-*.chs.h
-*.dyn_o
-*.dyn_hi
-.cabal-sandbox/
-cabal.sandbox.config
-*.prof
-*.aux
-*.hp
-*.eventlog
-.ghc.environment.*
 
 # ------------------------------------------
 # TypeScript / Node.js (core/runtime)

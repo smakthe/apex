@@ -1,8 +1,8 @@
 # APEX Top-Level Makefile
 
-.PHONY: all allocator storage jit raft optimizer runtime clean
+.PHONY: all allocator storage jit raft runtime clean
 
-all: allocator storage jit raft optimizer runtime fallbacks
+all: allocator storage jit raft runtime fallbacks
 
 allocator:
 	clang -shared -fPIC -std=c11 -O3 core/allocator/allocator.c -o core/allocator/libapex_allocator.so
@@ -16,9 +16,6 @@ jit:
 raft:
 	cd core/raft && go build ./...
 
-optimizer:
-	cd core/optimizer && cabal build
-
 runtime:
 	cd core/runtime && npm install && npm run build
 
@@ -30,6 +27,5 @@ fallbacks:
 clean:
 	rm -f core/allocator/libapex_allocator.so
 	cd core/jit && cargo clean
-	cd core/optimizer && cabal clean
 	rm -rf core/runtime/node_modules core/runtime/dist
 	rm -f core/kernels/libhotpath_fallback.so core/kernels/libparallel_join_fallback.so core/fpga/libfpga_mock.so
