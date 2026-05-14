@@ -13,9 +13,10 @@ APEX ships with a production-ready **Interactive REPL**. Instead of relying on s
 ### Quick Start
 
 ```bash
-# Compile the APEX Interactive Terminal
-cd cmd/apex
-go build -o apex
+# Compile the APEX Interactive Terminal to the root directory
+cd cli
+go build -o ../apex main.go
+cd ..
 
 # Launch the Engine
 ./apex
@@ -59,7 +60,7 @@ board       |avg_math_score
 
 APEX is divided into discrete, highly specialized modules. The system uses **Zero-Cost FFI (`extern "C"`)** for tight hardware linkage and **gRPC/Protobuf** for loose distributed coordination.
 
-1. **Go (`cmd/apex` & `core/raft`)**
+1. **Go (`cli` & `core/raft`)**
    - **CLI Engine**: The interactive REPL and universal RDBMS streaming adapter.
    - **Consensus**: Distributed coordination and state replication using the Raft algorithm.
 2. **Rust (`core/jit` & `core/storage`)**

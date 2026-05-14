@@ -10,8 +10,9 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/chzyer/readline"
 	_ "github.com/go-sql-driver/mysql"
-	// _ "github.com/lib/pq" // Ensure lib/pq is installed for PostgreSQL support
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -46,16 +47,29 @@ func main() {
 		var driver, dsn string
 
 		if method == "2" {
-			fmt.Print("Enter Connection String (e.g. mysql://root:pass@localhost:3306/db): ")
-			connStr, _ := reader.ReadString('\n')
-			connStr = strings.TrimSpace(connStr)
+			var connStr string
+			for {
+				fmt.Print("Enter Connection String (e.g. protocol://username:password@host:port/database): ")
+				connStr, _ = reader.ReadString('\n')
+				connStr = strings.TrimSpace(connStr)
+				if connStr != "" {
+					break
+				}
+				fmt.Println(colorRed + "Connection String cannot be empty." + colorReset)
+			}
 			
-			if strings.HasPrefix(connStr, "postgres://") {
+			if strings.HasPrefix(connStr, "postgres://") || strings.HasPrefix(connStr, "postgresql://") {
 				driver = "postgres"
+				if !strings.Contains(connStr, "sslmode=") {
+					if strings.Contains(connStr, "?") {
+						connStr += "&sslmode=disable"
+					} else {
+						connStr += "?sslmode=disable"
+					}
+				}
 				dsn = connStr
 			} else {
 				driver = "mysql"
-				// Naive conversion for prototype (mysql://root:pass@host/db -> root:pass@tcp(host)/db)
 				stripped := strings.TrimPrefix(connStr, "mysql://")
 				parts := strings.SplitN(stripped, "@", 2)
 				if len(parts) == 2 {
@@ -66,28 +80,58 @@ func main() {
 				}
 			}
 		} else {
-			fmt.Print("Database Type (mysql/postgres) [mysql]: ")
-			dbType, _ := reader.ReadString('\n')
-			dbType = strings.TrimSpace(strings.ToLower(dbType))
-			if dbType == "" { dbType = "mysql" }
+			var dbType string
+			for {
+				fmt.Print("Database Type (mysql/postgres): ")
+				dbType, _ = reader.ReadString('\n')
+				dbType = strings.TrimSpace(strings.ToLower(dbType))
+				if dbType == "mysql" || dbType == "postgres" || dbType == "postgresql" {
+					break
+				}
+				if dbType == "" {
+					fmt.Println(colorRed + "Database Type cannot be empty." + colorReset)
+				} else {
+					fmt.Println(colorRed + "Invalid Database Type." + colorReset)
+				}
+			}
 
-			fmt.Print("Username [root]: ")
+			defaultUser := "root"
+			defaultHost := "localhost:3306"
+
+			if dbType == "postgres" || dbType == "postgresql" {
+				defaultUser = "postgres"
+				defaultHost = "localhost:5432"
+				dbType = "postgres"
+			}
+
+			fmt.Printf("Username [%s]: ", defaultUser)
 			user, _ := reader.ReadString('\n')
 			user = strings.TrimSpace(user)
-			if user == "" { user = "root" }
+			if user == "" {
+				user = defaultUser
+			}
 
 			fmt.Print("Password: ")
 			pass, _ := reader.ReadString('\n')
 			pass = strings.TrimSpace(pass)
 
-			fmt.Print("Host [localhost:3306]: ")
+			fmt.Printf("Host [%s]: ", defaultHost)
 			host, _ := reader.ReadString('\n')
 			host = strings.TrimSpace(host)
-			if host == "" { host = "localhost:3306" }
+			if host == "" {
+				host = defaultHost
+			}
 
-			fmt.Print("Database Name: ")
-			dbName, _ := reader.ReadString('\n')
-			dbName = strings.TrimSpace(dbName)
+			var dbName string
+			for {
+				fmt.Print("Database Name (required): ")
+				dbName, _ = reader.ReadString('\n')
+				dbName = strings.TrimSpace(dbName)
+				if dbName != "" {
+					break
+				}
+				fmt.Println(colorRed + "Database Name cannot be empty." + colorReset)
+			}
 
 			driver = dbType
 			if driver == "mysql" {
@@ -114,21 +158,35 @@ func main() {
 	}
 }
 
-func runQueryLoop(db *sql.DB, reader *bufio.Reader) {
+func runQueryLoop(db *sql.DB, stdReader *bufio.Reader) {
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:          "\033[32mAPEX SQL > \033[0m",
+		HistoryFile:     "/tmp/apex_sql_history.tmp",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "/q",
+	})
+	if err != nil {
+		fmt.Println(colorRed + "Failed to initialize readline: " + err.Error() + colorReset)
+		return
+	}
+	defer rl.Close()
+
+	fmt.Println(colorPurple + "---------------------------------------------------" + colorReset)
+	fmt.Println("Type your SQL query, '/dc' to disconnect and return to main menu, or '/q' to quit.")
+
 	for {
-		fmt.Println(colorPurple + "---------------------------------------------------" + colorReset)
-		fmt.Println("Type your SQL query, '/disconnect' to return to main menu, or '/exit' to quit.")
-		fmt.Print(colorGreen + "APEX SQL > " + colorReset)
-		
-		query, _ := reader.ReadString('\n')
+		query, err := rl.Readline()
+		if err != nil { // Handles Ctrl+C or EOF
+			break
+		}
 		query = strings.TrimSpace(query)
 
-		if query == "/disconnect" {
+		if query == "/dc" {
 			db.Close()
 			fmt.Println(colorYellow + "Disconnected from database." + colorReset)
 			return
 		}
-		if query == "/exit" {
+		if query == "/q" {
 			fmt.Println(colorGreen + "Goodbye!" + colorReset)
 			os.Exit(0)
 		}
@@ -196,7 +254,7 @@ func printWelcomeBanner() {
  / ___ |/ ____/ /___     /  \  
 /_/  |_/_/   /_____/    /_/\_\
                              
-The Polyglot Query Execution Engine` + colorReset)
+Adaptive Polyglot Execution Engine` + colorReset)
 	fmt.Println(colorCyan + "v0.1.0-alpha (In-Memory Lakehouse Edition)" + colorReset)
 	fmt.Println()
 }
