@@ -1,0 +1,63 @@
+version: 2
+project_name: apex
+
+builds:
+  - id: apex-cli
+    main: ./cli/main.go
+    binary: apex
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+# This section generates the .deb, .rpm, and .apk packages for Linux
+nfpms:
+  - vendor: APEX Project
+    homepage: https://github.com/smakthe/apex
+    maintainer: APEX Team
+    description: "The Adaptive Polyglot Execution Engine CLI"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/local/bin
+
+# This section generates the Homebrew Cask for macOS users
+homebrew_casks:
+  - repository:
+      owner: smakthe
+      name: homebrew-apex
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    description: "The Adaptive Polyglot Execution Engine CLI"
+    homepage: https://github.com/smakthe/apex
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
